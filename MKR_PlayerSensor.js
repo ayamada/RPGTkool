@@ -810,13 +810,33 @@
         return value;
     };
 
+    // Came from rpg_windows.js
+    const convertEscapeCharactersOriginal = function(that, text) {
+        text = text.replace(/\\/g, '\x1b');
+        text = text.replace(/\x1b\x1b/g, '\\');
+        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
+            return $gameVariables.value(parseInt(arguments[1]));
+        }.bind(that));
+        text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
+            return $gameVariables.value(parseInt(arguments[1]));
+        }.bind(that));
+        text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
+            return this.actorName(parseInt(arguments[1]));
+        }.bind(that));
+        text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
+            return this.partyMemberName(parseInt(arguments[1]));
+        }.bind(that));
+        text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
+        return text;
+    };
+
     const convertEscapeCharacters = function(text) {
         let windowChild;
 
         if(typeof text == "string") {
-            if(SceneManager._scene && SceneManager._scene._windowLayer) {
+            if(SceneManager._scene && SceneManager._scene._windowLayer && SceneManager._scene._windowLayer.children[0]) {
                 windowChild = SceneManager._scene._windowLayer.children[0];
-                text = windowChild ? windowChild.convertEscapeCharacters(text) : text;
+                text = convertEscapeCharactersOriginal(windowChild, text);
             } else {
                 text = ConvVb(text);
             }
@@ -898,16 +918,16 @@
         DefLostBallon, DefLostCommon, DefLostDelay, DefLostSe;
     DefSensorSwitch = CheckParam("switch", "Sensor_Switch", Parameters["Sensor_Switch"], "D");
     DefLostSensorSwitch = CheckParam("switch", "Lost_Sensor_Switch", Parameters["Lost_Sensor_Switch"]);
-    DefBothSensor = CheckParam("bool", "Both_Sensor", Parameters["Both_Sensor"], false);
-    DefRangeVisible = CheckParam("bool", "Range_Visible", Parameters["Range_Visible"], true);
-    DefTerrainDecision = CheckParam("bool", "Terrain_Decision", Parameters["Terrain_Decision"], false);
+    DefBothSensor = CEC(CheckParam("bool", "Both_Sensor", Parameters["Both_Sensor"], false));
+    DefRangeVisible = CEC(CheckParam("bool", "Range_Visible", Parameters["Range_Visible"], true));
+    DefTerrainDecision = CEC(CheckParam("bool", "Terrain_Decision", Parameters["Terrain_Decision"], false));
     DefRangeColor = CheckParam("string", "Range_Color", Parameters["Range_Color"], "white");
     DefRangeOpacity = CheckParam("num", "Range_Opacity", Parameters["Range_Opacity"], 80, 0, 255);
     DefAutoSensor = CheckParam("bool", "Auto_Sensor", Parameters["Auto_Sensor"], false);
-    DefEventDecision = CheckParam("bool", "Event_Decision", Parameters["Event_Decision"], false);
+    DefEventDecision = CEC(CheckParam("bool", "Event_Decision", Parameters["Event_Decision"], false));
     DefRegionDecisions = [];
     Parameters["Region_Decision"].forEach(function(region) {
-        DefRegionDecisions.push(CheckParam("string", "Region_Decision", region, 0));
+        DefRegionDecisions.push(CEC(CheckParam("string", "Region_Decision", region, 0)));
     });
     DefRealRangeX = CheckParam("float", "Real_Range_X", Parameters["Real_Range_X"], 0.000, 0.000, 0.999);
     DefRealRangeY = CheckParam("float", "Real_Range_Y", Parameters["Real_Range_Y"], 0.000, 0.000, 0.999);
@@ -1470,7 +1490,7 @@
         x2 = $gameMap.roundXWithDirection(x, d);
         y2 = $gameMap.roundYWithDirection(y, d);
         d2 = this.reverseDir(d);
-        eventDecision = CEC(DefEventDecision);
+        eventDecision = DefEventDecision;
         regionDecisions = getRegionIds(DefRegionDecisions, this.getRegionDecision());
         passableFlag = true;
 
@@ -2031,7 +2051,7 @@
         rex = this._realX;
         rey = this._realY;
         noPass = 0;
-        terrainDecision = CEC(DefTerrainDecision);
+        terrainDecision = DefTerrainDecision;
         realX = DefRealRangeX[0];
         realY = DefRealRangeY[0];
 
@@ -2382,8 +2402,8 @@
         sy = this.deltaYFrom($gamePlayer._realY);
         ex = this.x;
         ey = this.y;
-        bothSensor = CEC(DefBothSensor);
-        terrainDecision = CEC(DefTerrainDecision);
+        bothSensor = DefBothSensor;
+        terrainDecision = DefTerrainDecision;
         realX = DefRealRangeX[0];
         realY = DefRealRangeY[0];
 
@@ -2435,7 +2455,7 @@
         obstacle = -1;
         status = "Last";
         noPassDir = (signX != 0)? ry : rx;
-        terrainDecision = CEC(DefTerrainDecision);
+        terrainDecision = DefTerrainDecision;
 
         // 正面探索
         for(j = 0; j <= cnt; j++) {
@@ -2577,7 +2597,7 @@
         sensorStatus = this._character.getSensorStatus();
         rangeStatus = this._character.getViewRangeStatus();
         rangeVisible = this._character.getRangeVisible();
-        defVisible = CEC(DefRangeVisible);
+        defVisible = DefRangeVisible;
 
         if(sensorStatus == 1 && (rangeVisible == 1 || (rangeVisible == -1 && defVisible))) {
             this.updatePosition();
@@ -2612,7 +2632,7 @@
         direction = this._character.direction();
         dirFixed = this._character.getDirectionFixed();
         direction = (dirFixed == -1)? direction : dirFixed;
-        bothSensor = CEC(DefBothSensor);
+        bothSensor = DefBothSensor;
         coordinates = this._coordinate;
         sensorType = this._character.getSensorType();
         sensorRangeC = this._character.getSensorRangeC();
@@ -2709,7 +2729,7 @@
         direction = this._character.direction();
         dirFixed = this._character.getDirectionFixed();
         direction = (dirFixed == -1)? direction : dirFixed;
-        bothSensor = CEC(DefBothSensor);
+        bothSensor = DefBothSensor;
         sensorType = this._character.getSensorType();
         sensorRangeC = this._character.getSensorRangeC();
         sensorRange = this._character.getSensorRange();
@@ -3246,7 +3266,7 @@
             argCount = arguments.length;
             for(i = 0; i < argCount; i++) {
                 if(Array.isArray(arguments[i]) && arguments[i].length > 0) {
-                    ArrayRegionId.push(CEC(arguments[i][0]));
+                    ArrayRegionId.push(arguments[i][0]);
                 } else if(typeof arguments[i] == "string") {
                     ary = arguments[i].split("_").filter(function(val){
                         return val != "" && val != "0";
